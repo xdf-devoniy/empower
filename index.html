@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Empower Audio Library</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            fontFamily: {
+              sans: ["Inter", "ui-sans-serif", "system-ui", "-apple-system", "BlinkMacSystemFont", "Segoe UI", "sans-serif"],
+            },
+            colors: {
+              primary: {
+                50: "#eff6ff",
+                100: "#dbeafe",
+                200: "#bfdbfe",
+                300: "#93c5fd",
+                400: "#60a5fa",
+                500: "#3b82f6",
+                600: "#2563eb",
+                700: "#1d4ed8",
+                800: "#1e40af",
+                900: "#1e3a8a",
+              },
+            },
+          },
+        },
+      };
+    </script>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      body {
+        background: radial-gradient(circle at top, rgba(59, 130, 246, 0.18), transparent 50%),
+          linear-gradient(180deg, #0f172a 0%, #020617 100%);
+      }
+      .glass {
+        background: rgba(15, 23, 42, 0.65);
+        backdrop-filter: blur(18px);
+      }
+    </style>
+  </head>
+  <body class="min-h-full text-slate-100 font-sans">
+    <div class="relative overflow-hidden">
+      <div class="absolute inset-0 bg-gradient-to-br from-primary-500/30 via-transparent to-indigo-500/20 pointer-events-none"></div>
+      <main class="relative z-10 flex flex-col gap-8 px-4 pb-32 pt-10 sm:px-6 lg:px-12">
+        <header class="mx-auto max-w-4xl text-center">
+          <h1 class="text-3xl font-semibold tracking-tight sm:text-4xl">Empower Workbook Audio</h1>
+          <p class="mt-3 text-base text-slate-300 sm:text-lg">
+            Stream every unit's audio tracks with a modern, mobile-first player. Tap a track to begin listening and control playback from the floating player.
+          </p>
+        </header>
+
+        <section class="mx-auto w-full max-w-4xl glass rounded-3xl border border-white/10 p-6 shadow-2xl">
+          <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <label class="relative flex-1">
+              <input
+                id="search"
+                type="search"
+                placeholder="Search units or tracks"
+                class="w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-slate-100 placeholder:text-slate-400 focus:border-primary-400 focus:outline-none focus:ring-2 focus:ring-primary-400/50"
+              />
+              <span class="pointer-events-none absolute inset-y-0 right-4 flex items-center text-slate-400">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-4.35-4.35m0 0A7.5 7.5 0 105.66 5.66a7.5 7.5 0 0010.99 10.99z" />
+                </svg>
+              </span>
+            </label>
+            <div class="flex items-center gap-3 text-xs text-slate-300 sm:text-sm">
+              <span class="flex h-10 w-10 items-center justify-center rounded-full bg-primary-500/20 text-primary-200">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M9 19V6l12-3v13" />
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M9 10l12-3" />
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M5 6v12" />
+                </svg>
+              </span>
+              <p>
+                High-quality streaming only — downloads are disabled so you can stay focused while learning.
+              </p>
+            </div>
+          </div>
+
+          <div id="units" class="mt-8 flex flex-col gap-6"></div>
+        </section>
+      </main>
+
+      <section id="player"
+        class="fixed inset-x-0 bottom-4 mx-auto flex w-[calc(100%-1.5rem)] max-w-2xl items-center gap-4 rounded-3xl border border-white/10 bg-slate-900/90 p-4 text-sm shadow-2xl sm:w-[calc(100%-3rem)]">
+        <div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-primary-500/20 text-primary-200">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M9 19V6l12-3v13" />
+            <path stroke-linecap="round" stroke-linejoin="round" d="M9 10l12-3" />
+            <path stroke-linecap="round" stroke-linejoin="round" d="M5 6v12" />
+          </svg>
+        </div>
+        <div class="flex w-full flex-col gap-2 overflow-hidden">
+          <div class="flex items-center justify-between gap-2">
+            <div class="min-w-0">
+              <p id="player-title" class="truncate text-sm font-semibold text-white">Select a track to begin</p>
+              <p id="player-unit" class="truncate text-xs text-slate-400">No track playing</p>
+            </div>
+            <div class="flex shrink-0 items-center gap-3">
+              <button id="prev" class="rounded-full p-2 text-slate-300 transition hover:bg-white/10" aria-label="Previous track">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M18.75 19.5l-7.5-7.5 7.5-7.5M5.25 19.5V6" />
+                </svg>
+              </button>
+              <button id="play-pause" class="flex h-12 w-12 items-center justify-center rounded-full bg-primary-500 text-white transition hover:bg-primary-400" aria-label="Play or pause">
+                <svg id="play-icon" xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M5 3l14 9-14 9V3z" />
+                </svg>
+                <svg id="pause-icon" xmlns="http://www.w3.org/2000/svg" class="hidden h-6 w-6" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M6 4h4v16H6zM14 4h4v16h-4z" />
+                </svg>
+              </button>
+              <button id="next" class="rounded-full p-2 text-slate-300 transition hover:bg-white/10" aria-label="Next track">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M5.25 4.5l7.5 7.5-7.5 7.5M18.75 4.5V18" />
+                </svg>
+              </button>
+            </div>
+          </div>
+          <div class="flex items-center gap-3">
+            <span id="current-time" class="w-10 text-xs tabular-nums text-slate-400">0:00</span>
+            <input id="progress" type="range" min="0" max="100" value="0" class="h-1 w-full cursor-pointer appearance-none rounded-full bg-slate-700" />
+            <span id="duration" class="w-10 text-xs tabular-nums text-slate-400">0:00</span>
+          </div>
+        </div>
+        <audio id="audio" preload="metadata" controlslist="nodownload noplaybackrate" class="hidden"></audio>
+      </section>
+    </div>
+
+    <template id="unit-template">
+      <article class="rounded-3xl border border-white/5 bg-white/5 p-5 shadow-xl transition duration-200 hover:border-primary-400/60 hover:shadow-primary-500/10">
+        <header class="flex flex-wrap items-center justify-between gap-3">
+          <h2 class="text-lg font-semibold text-white"></h2>
+          <span class="rounded-full bg-primary-500/20 px-3 py-1 text-xs font-medium text-primary-200"></span>
+        </header>
+        <ul class="mt-4 flex flex-col gap-2"></ul>
+      </article>
+    </template>
+
+    <template id="track-template">
+      <li>
+        <button class="group flex w-full items-center justify-between gap-3 rounded-2xl border border-white/5 bg-slate-900/40 px-4 py-3 text-left text-sm text-slate-200 transition hover:border-primary-400/50 hover:bg-primary-500/10 focus:outline-none focus:ring-2 focus:ring-primary-400/50">
+          <span class="flex items-center gap-3">
+            <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white/5 text-primary-300 transition group-hover:bg-primary-500 group-hover:text-white">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M5 3l14 9-14 9V3z" />
+              </svg>
+            </span>
+            <span class="truncate font-medium text-white"></span>
+          </span>
+          <span class="text-xs text-slate-400"></span>
+        </button>
+      </li>
+    </template>
+
+    <script>
+      const unitsData = [
+        { name: "Unit 1", tracks: ["Empower Starter Workbook Audio Track 00-01.mp3", "Empower Starter Workbook Audio Track 01-01.mp3", "Empower Starter Workbook Audio Track 01-02.mp3", "Empower Starter Workbook Audio Track 01-03.mp3", "Empower Starter Workbook Audio Track 01-04.mp3", "Empower Starter Workbook Audio Track 01-05.mp3", "Empower Starter Workbook Audio Track 01-06.mp3", "Empower Starter Workbook Audio Track 01-07.mp3"] },
+        { name: "Unit 10", tracks: ["Empower Starter Workbook Audio Track 10-01.mp3", "Empower Starter Workbook Audio Track 10-02.mp3", "Empower Starter Workbook Audio Track 10-03.mp3", "Empower Starter Workbook Audio Track 10-04.mp3", "Empower Starter Workbook Audio Track 10-05.mp3", "Empower Starter Workbook Audio Track 10-06.mp3", "Empower Starter Workbook Audio Track 10-07.mp3", "Empower Starter Workbook Audio Track 10-08.mp3", "Empower Starter Workbook Audio Track 10-09.mp3"] },
+        { name: "Unit 11", tracks: ["Empower Starter Workbook Audio Track 11-01.mp3", "Empower Starter Workbook Audio Track 11-02.mp3", "Empower Starter Workbook Audio Track 11-03.mp3", "Empower Starter Workbook Audio Track 11-04.mp3", "Empower Starter Workbook Audio Track 11-05.mp3", "Empower Starter Workbook Audio Track 11-06.mp3", "Empower Starter Workbook Audio Track 11-07.mp3", "Empower Starter Workbook Audio Track 11-08.mp3", "Empower Starter Workbook Audio Track 11-09.mp3"] },
+        { name: "Unit 12", tracks: ["Empower Starter Workbook Audio Track 12-01.mp3", "Empower Starter Workbook Audio Track 12-02.mp3", "Empower Starter Workbook Audio Track 12-03.mp3", "Empower Starter Workbook Audio Track 12-04.mp3", "Empower Starter Workbook Audio Track 12-05.mp3", "Empower Starter Workbook Audio Track 12-06.mp3", "Empower Starter Workbook Audio Track 12-07.mp3", "Empower Starter Workbook Audio Track 12-08.mp3", "Empower Starter Workbook Audio Track 12-09.mp3", "Empower Starter Workbook Audio Track 12-10.mp3", "Empower Starter Workbook Audio Track 12-11.mp3"] },
+        { name: "Unit 2", tracks: ["Empower Starter Workbook Audio Track 02-01.mp3", "Empower Starter Workbook Audio Track 02-02.mp3", "Empower Starter Workbook Audio Track 02-03.mp3", "Empower Starter Workbook Audio Track 02-04.mp3", "Empower Starter Workbook Audio Track 02-05.mp3", "Empower Starter Workbook Audio Track 02-06.mp3", "Empower Starter Workbook Audio Track 02-07.mp3"] },
+        { name: "Unit 3", tracks: ["Empower Starter Workbook Audio Track 03-01.mp3", "Empower Starter Workbook Audio Track 03-02.mp3", "Empower Starter Workbook Audio Track 03-03.mp3", "Empower Starter Workbook Audio Track 03-04.mp3", "Empower Starter Workbook Audio Track 03-05.mp3", "Empower Starter Workbook Audio Track 03-06.mp3", "Empower Starter Workbook Audio Track 03-07.mp3", "Empower Starter Workbook Audio Track 03-08.mp3", "Empower Starter Workbook Audio Track 03-09.mp3", "Empower Starter Workbook Audio Track 03-10.mp3"] },
+        { name: "Unit 4", tracks: ["Empower Starter Workbook Audio Track 04-01.mp3", "Empower Starter Workbook Audio Track 04-02.mp3", "Empower Starter Workbook Audio Track 04-03.mp3", "Empower Starter Workbook Audio Track 04-04.mp3", "Empower Starter Workbook Audio Track 04-05.mp3", "Empower Starter Workbook Audio Track 04-06.mp3"] },
+        { name: "Unit 5", tracks: ["Empower Starter Workbook Audio Track 05-01.mp3", "Empower Starter Workbook Audio Track 05-02.mp3", "Empower Starter Workbook Audio Track 05-03.mp3", "Empower Starter Workbook Audio Track 05-04.mp3", "Empower Starter Workbook Audio Track 05-05.mp3", "Empower Starter Workbook Audio Track 05-06.mp3", "Empower Starter Workbook Audio Track 05-07.mp3", "Empower Starter Workbook Audio Track 05-08.mp3"] },
+        { name: "Unit 6", tracks: ["Empower Starter Workbook Audio Track 06-01.mp3", "Empower Starter Workbook Audio Track 06-02.mp3", "Empower Starter Workbook Audio Track 06-03.mp3", "Empower Starter Workbook Audio Track 06-04.mp3", "Empower Starter Workbook Audio Track 06-05.mp3", "Empower Starter Workbook Audio Track 06-06.mp3", "Empower Starter Workbook Audio Track 06-07.mp3", "Empower Starter Workbook Audio Track 06-08.mp3", "Empower Starter Workbook Audio Track 06-09.mp3"] },
+        { name: "Unit 7", tracks: ["Empower Starter Workbook Audio Track 07-01.mp3", "Empower Starter Workbook Audio Track 07-02.mp3", "Empower Starter Workbook Audio Track 07-03.mp3", "Empower Starter Workbook Audio Track 07-04.mp3", "Empower Starter Workbook Audio Track 07-05.mp3", "Empower Starter Workbook Audio Track 07-06.mp3", "Empower Starter Workbook Audio Track 07-07.mp3", "Empower Starter Workbook Audio Track 07-08.mp3", "Empower Starter Workbook Audio Track 07-09.mp3"] },
+        { name: "Unit 8", tracks: ["Empower Starter Workbook Audio Track 08-01.mp3", "Empower Starter Workbook Audio Track 08-02.mp3", "Empower Starter Workbook Audio Track 08-03.mp3", "Empower Starter Workbook Audio Track 08-04.mp3", "Empower Starter Workbook Audio Track 08-05.mp3", "Empower Starter Workbook Audio Track 08-06.mp3", "Empower Starter Workbook Audio Track 08-07.mp3", "Empower Starter Workbook Audio Track 08-08.mp3", "Empower Starter Workbook Audio Track 08-09.mp3"] },
+        { name: "Unit 9", tracks: ["Empower Starter Workbook Audio Track 09-01.mp3", "Empower Starter Workbook Audio Track 09-02.mp3", "Empower Starter Workbook Audio Track 09-03.mp3", "Empower Starter Workbook Audio Track 09-04.mp3", "Empower Starter Workbook Audio Track 09-05.mp3", "Empower Starter Workbook Audio Track 09-06.mp3", "Empower Starter Workbook Audio Track 09-07.mp3", "Empower Starter Workbook Audio Track 09-08.mp3", "Empower Starter Workbook Audio Track 09-09.mp3"] }
+      ];
+
+      const unitsContainer = document.getElementById("units");
+      const unitTemplate = document.getElementById("unit-template");
+      const trackTemplate = document.getElementById("track-template");
+      const searchInput = document.getElementById("search");
+
+      const audio = document.getElementById("audio");
+      const playPauseBtn = document.getElementById("play-pause");
+      const playIcon = document.getElementById("play-icon");
+      const pauseIcon = document.getElementById("pause-icon");
+      const progress = document.getElementById("progress");
+      const currentTimeEl = document.getElementById("current-time");
+      const durationEl = document.getElementById("duration");
+      const titleEl = document.getElementById("player-title");
+      const unitEl = document.getElementById("player-unit");
+      const nextBtn = document.getElementById("next");
+      const prevBtn = document.getElementById("prev");
+
+      let flatTracks = [];
+      let currentIndex = -1;
+      let currentTrackFile = null;
+
+      function formatTitle(fileName) {
+        const match = fileName.match(/Track\s+(\d+)-(\d+)/);
+        if (match) {
+          const unit = parseInt(match[1], 10);
+          const track = parseInt(match[2], 10);
+          return `Track ${unit}-${track}`;
+        }
+        return fileName.replace("Empower Starter Workbook Audio", "Track").replace(/\s+/g, " ").trim();
+      }
+
+      function formatUnitName(unit) {
+        return unit.replace("Unit ", "Unit ");
+      }
+
+      function formatTime(seconds) {
+        if (isNaN(seconds)) return "0:00";
+        const mins = Math.floor(seconds / 60);
+        const secs = Math.floor(seconds % 60).toString().padStart(2, "0");
+        return `${mins}:${secs}`;
+      }
+
+      function populateUnits(data) {
+        unitsContainer.innerHTML = "";
+        flatTracks = [];
+
+        if (data.length === 0) {
+          const emptyState = document.createElement("div");
+          emptyState.className = "rounded-3xl border border-dashed border-white/10 bg-white/5 p-8 text-center text-sm text-slate-300";
+          emptyState.innerHTML = `No tracks found. Try a different search term.`;
+          unitsContainer.appendChild(emptyState);
+          return;
+        }
+
+        let foundCurrent = false;
+
+        data.forEach((unit) => {
+          const unitNode = unitTemplate.content.cloneNode(true);
+          const header = unitNode.querySelector("h2");
+          const counter = unitNode.querySelector("span");
+          const list = unitNode.querySelector("ul");
+
+          header.textContent = formatUnitName(unit.name);
+          counter.textContent = `${unit.tracks.length} tracks`;
+
+          unit.tracks.forEach((track) => {
+            const trackNode = trackTemplate.content.cloneNode(true);
+            const button = trackNode.querySelector("button");
+            const titleSpan = trackNode.querySelector("span span + span");
+            const badge = trackNode.querySelector("button > span:last-child");
+
+            const trackTitle = formatTitle(track);
+            titleSpan.textContent = trackTitle;
+            const badgeMatch = track.match(/(\d{2})-(\d{2})/);
+            badge.textContent = badgeMatch ? `${parseInt(badgeMatch[1], 10)}-${parseInt(badgeMatch[2], 10)}` : track.replace(".mp3", "");
+
+            const fullPath = `${unit.name}/${track}`;
+            const trackData = {
+              unit: unit.name,
+              title: trackTitle,
+              file: fullPath,
+              element: button,
+            };
+
+            button.addEventListener("click", () => {
+              loadTrack(flatTracks.findIndex((t) => t === trackData));
+              playAudio();
+            });
+
+            list.appendChild(trackNode);
+            flatTracks.push(trackData);
+
+            if (trackData.file === currentTrackFile) {
+              foundCurrent = true;
+              currentIndex = flatTracks.length - 1;
+              trackData.element.classList.add("ring", "ring-primary-400/60", "bg-primary-500/10");
+            }
+          });
+
+          unitsContainer.appendChild(unitNode);
+        });
+
+        if (!foundCurrent) {
+          currentIndex = -1;
+        }
+      }
+
+      function loadTrack(index) {
+        if (index < 0 || index >= flatTracks.length) return;
+        if (currentIndex === index) return;
+
+        const prevTrack = flatTracks[currentIndex];
+        if (prevTrack) {
+          prevTrack.element.classList.remove("ring", "ring-primary-400/60", "bg-primary-500/10");
+        }
+
+        currentIndex = index;
+        const track = flatTracks[currentIndex];
+        audio.src = track.file;
+        titleEl.textContent = track.title;
+        unitEl.textContent = track.unit;
+        currentTrackFile = track.file;
+        progress.value = 0;
+        currentTimeEl.textContent = "0:00";
+        durationEl.textContent = "0:00";
+
+        track.element.classList.add("ring", "ring-primary-400/60", "bg-primary-500/10");
+      }
+
+      function playAudio() {
+        if (!audio.src) return;
+        audio.play();
+      }
+
+      function pauseAudio() {
+        audio.pause();
+      }
+
+      function togglePlayPause() {
+        if (!audio.src) return;
+        if (audio.paused) {
+          playAudio();
+        } else {
+          pauseAudio();
+        }
+      }
+
+      function updatePlayButton() {
+        const isPlaying = !audio.paused && !audio.ended;
+        playIcon.classList.toggle("hidden", isPlaying);
+        pauseIcon.classList.toggle("hidden", !isPlaying);
+      }
+
+      function updateProgress() {
+        if (!audio.duration) return;
+        progress.value = (audio.currentTime / audio.duration) * 100;
+        currentTimeEl.textContent = formatTime(audio.currentTime);
+        durationEl.textContent = formatTime(audio.duration);
+      }
+
+      function seekAudio(event) {
+        if (!audio.duration) return;
+        const percent = event.target.value / 100;
+        audio.currentTime = percent * audio.duration;
+      }
+
+      function playNext() {
+        if (currentIndex + 1 < flatTracks.length) {
+          loadTrack(currentIndex + 1);
+          playAudio();
+        }
+      }
+
+      function playPrev() {
+        if (audio.currentTime > 3) {
+          audio.currentTime = 0;
+          return;
+        }
+        if (currentIndex - 1 >= 0) {
+          loadTrack(currentIndex - 1);
+          playAudio();
+        }
+      }
+
+      audio.addEventListener("play", updatePlayButton);
+      audio.addEventListener("pause", updatePlayButton);
+      audio.addEventListener("ended", () => {
+        updatePlayButton();
+        playNext();
+      });
+      audio.addEventListener("timeupdate", updateProgress);
+      audio.addEventListener("loadedmetadata", updateProgress);
+
+      playPauseBtn.addEventListener("click", togglePlayPause);
+      progress.addEventListener("input", seekAudio);
+      nextBtn.addEventListener("click", playNext);
+      prevBtn.addEventListener("click", playPrev);
+      audio.addEventListener("contextmenu", (event) => event.preventDefault());
+
+      searchInput.addEventListener("input", (event) => {
+        const query = event.target.value.toLowerCase();
+        const filtered = unitsData
+          .map((unit) => ({
+            ...unit,
+            tracks: unit.tracks.filter((track) => {
+              const formatted = formatTitle(track).toLowerCase();
+              return (
+                formatted.includes(query) ||
+                unit.name.toLowerCase().includes(query)
+              );
+            }),
+          }))
+          .filter((unit) => unit.tracks.length > 0 || unit.name.toLowerCase().includes(query));
+
+        if (!query) {
+          populateUnits(unitsData);
+          return;
+        }
+        populateUnits(filtered);
+      });
+
+      populateUnits(unitsData);
+    </script>
+  </body>
+</html>
