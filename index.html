@@ -91,8 +91,10 @@
         </section>
       </main>
 
-      <section id="player"
-        class="fixed inset-x-0 bottom-4 mx-auto flex w-[calc(100%-1.5rem)] max-w-2xl items-center gap-4 rounded-3xl border border-white/10 bg-slate-900/90 p-4 text-sm shadow-2xl sm:w-[calc(100%-3rem)]">
+      <section
+        id="player"
+        class="fixed inset-x-0 bottom-4 z-50 mx-auto flex w-[calc(100%-1.5rem)] max-w-2xl items-center gap-4 rounded-3xl border border-white/10 bg-slate-900/90 p-4 text-sm shadow-2xl sm:w-[calc(100%-3rem)]"
+      >
         <div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-primary-500/20 text-primary-200">
           <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
             <path stroke-linecap="round" stroke-linejoin="round" d="M9 19V6l12-3v13" />
@@ -139,10 +141,29 @@
 
     <template id="unit-template">
       <article class="rounded-3xl border border-white/5 bg-white/5 p-5 shadow-xl transition duration-200 hover:border-primary-400/60 hover:shadow-primary-500/10">
-        <header class="flex flex-wrap items-center justify-between gap-3">
-          <h2 class="text-lg font-semibold text-white"></h2>
-          <span class="rounded-full bg-primary-500/20 px-3 py-1 text-xs font-medium text-primary-200"></span>
-        </header>
+        <button
+          type="button"
+          data-toggle
+          class="flex w-full items-center justify-between gap-4 rounded-2xl bg-white/0 px-1 py-1 text-left text-white transition hover:bg-white/5 focus:outline-none focus:ring-2 focus:ring-primary-400/50"
+          aria-expanded="true"
+        >
+          <div class="flex items-center gap-3">
+            <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary-500/15 text-primary-200">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v12m6-6H6" />
+              </svg>
+            </span>
+            <h2 data-title class="text-lg font-semibold text-white"></h2>
+          </div>
+          <div class="flex items-center gap-3 text-xs font-medium text-primary-100">
+            <span data-count class="rounded-full bg-primary-500/20 px-3 py-1 text-primary-200"></span>
+            <span data-icon class="transform text-slate-300 transition-transform duration-200">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M6 9l6 6 6-6" />
+              </svg>
+            </span>
+          </div>
+        </button>
         <ul class="mt-4 flex flex-col gap-2"></ul>
       </article>
     </template>
@@ -156,9 +177,9 @@
                 <path d="M5 3l14 9-14 9V3z" />
               </svg>
             </span>
-            <span class="truncate font-medium text-white"></span>
+            <span data-track-title class="truncate font-medium text-white"></span>
           </span>
-          <span class="text-xs text-slate-400"></span>
+          <span data-track-badge class="text-xs text-slate-400"></span>
         </button>
       </li>
     </template>
@@ -183,6 +204,7 @@
       const unitTemplate = document.getElementById("unit-template");
       const trackTemplate = document.getElementById("track-template");
       const searchInput = document.getElementById("search");
+      const unitOpenState = new Map();
 
       const audio = document.getElementById("audio");
       const playPauseBtn = document.getElementById("play-pause");
@@ -214,11 +236,32 @@
         return unit.replace("Unit ", "Unit ");
       }
 
+      function getUnitNumber(name) {
+        const match = name.match(/\d+/);
+        return match ? parseInt(match[0], 10) : Number.POSITIVE_INFINITY;
+      }
+
       function formatTime(seconds) {
         if (isNaN(seconds)) return "0:00";
         const mins = Math.floor(seconds / 60);
         const secs = Math.floor(seconds % 60).toString().padStart(2, "0");
         return `${mins}:${secs}`;
+      }
+
+      function setUnitOpenState(list, toggleButton, icon, unitName, isOpen, persist = true) {
+        list.classList.toggle("hidden", !isOpen);
+        toggleButton.setAttribute("aria-expanded", String(isOpen));
+        icon.classList.toggle("-rotate-90", !isOpen);
+        if (persist) {
+          unitOpenState.set(unitName, isOpen);
+        }
+      }
+
+      function ensureUnitExpanded(track) {
+        if (!track) return;
+        if (track.list.classList.contains("hidden")) {
+          setUnitOpenState(track.list, track.toggleButton, track.icon, track.unit, true);
+        }
       }
 
       function populateUnits(data) {
@@ -234,21 +277,33 @@
         }
 
         let foundCurrent = false;
+        const sortedUnits = [...data].sort((a, b) => getUnitNumber(a.name) - getUnitNumber(b.name));
+        const isSearchActive = Boolean(searchInput.value.trim());
 
-        data.forEach((unit) => {
+        sortedUnits.forEach((unit) => {
           const unitNode = unitTemplate.content.cloneNode(true);
-          const header = unitNode.querySelector("h2");
-          const counter = unitNode.querySelector("span");
           const list = unitNode.querySelector("ul");
+          const titleEl = unitNode.querySelector("[data-title]");
+          const countEl = unitNode.querySelector("[data-count]");
+          const toggleButton = unitNode.querySelector("[data-toggle]");
+          const icon = unitNode.querySelector("[data-icon]");
 
-          header.textContent = formatUnitName(unit.name);
-          counter.textContent = `${unit.tracks.length} tracks`;
+          titleEl.textContent = formatUnitName(unit.name);
+          countEl.textContent = `${unit.tracks.length} tracks`;
+
+          const shouldStartOpen = isSearchActive ? true : unitOpenState.has(unit.name) ? unitOpenState.get(unit.name) : true;
+          setUnitOpenState(list, toggleButton, icon, unit.name, shouldStartOpen, !isSearchActive);
+
+          toggleButton.addEventListener("click", () => {
+            const currentlyOpen = toggleButton.getAttribute("aria-expanded") === "true";
+            setUnitOpenState(list, toggleButton, icon, unit.name, !currentlyOpen);
+          });
 
           unit.tracks.forEach((track) => {
             const trackNode = trackTemplate.content.cloneNode(true);
             const button = trackNode.querySelector("button");
-            const titleSpan = trackNode.querySelector("span span + span");
-            const badge = trackNode.querySelector("button > span:last-child");
+            const titleSpan = trackNode.querySelector("[data-track-title]");
+            const badge = trackNode.querySelector("[data-track-badge]");
 
             const trackTitle = formatTitle(track);
             titleSpan.textContent = trackTitle;
@@ -261,6 +316,9 @@
               title: trackTitle,
               file: fullPath,
               element: button,
+              list,
+              toggleButton,
+              icon,
             };
 
             button.addEventListener("click", () => {
@@ -274,9 +332,18 @@
             if (trackData.file === currentTrackFile) {
               foundCurrent = true;
               currentIndex = flatTracks.length - 1;
+              setUnitOpenState(list, toggleButton, icon, unit.name, true);
               trackData.element.classList.add("ring", "ring-primary-400/60", "bg-primary-500/10");
             }
           });
+
+          if (!list.children.length) {
+            const emptyItem = document.createElement("li");
+            emptyItem.className = "rounded-2xl border border-dashed border-white/10 bg-slate-900/40 px-4 py-3 text-sm text-slate-400";
+            emptyItem.textContent = "No tracks match your search.";
+            list.appendChild(emptyItem);
+            setUnitOpenState(list, toggleButton, icon, unit.name, true, !isSearchActive);
+          }
 
           unitsContainer.appendChild(unitNode);
         });
@@ -297,6 +364,7 @@
 
         currentIndex = index;
         const track = flatTracks[currentIndex];
+        ensureUnitExpanded(track);
         audio.src = track.file;
         titleEl.textContent = track.title;
         unitEl.textContent = track.unit;
